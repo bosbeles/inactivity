@@ -12,7 +12,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by a on 4.10.2015.
+ * Main class
  */
 public class Main {
 
@@ -33,54 +33,49 @@ public class Main {
         //final String filename = args[0];
         final String filename = "ff_x10_001.JPG";
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                final JFrame frame = new JFrame("Navigable Image Panel");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                NavigableImagePanel panel = new NavigableImagePanel();
-                try {
-                    final BufferedImage image = ImageIO.read( Main.class.getClassLoader().getResourceAsStream(filename) );
-                    panel.setImage(image);
-                } catch (IOException e) {
-                    JOptionPane.showMessageDialog(null, e.getMessage(), "",
-                            JOptionPane.ERROR_MESSAGE);
-                    System.exit(1);
-                }
-
-                frame.getContentPane().add(panel, BorderLayout.CENTER);
-
-                GraphicsEnvironment ge =
-                        GraphicsEnvironment.getLocalGraphicsEnvironment();
-                Rectangle bounds = ge.getMaximumWindowBounds();
-                frame.setSize(new Dimension(bounds.width, bounds.height));
-                frame.setVisible(true);
-
-                final Login login = new Login();
-
-                final InactivityListener listener = new InactivityListener(new Runnable() {
-                    @Override
-                    public void run() {
-                        frame.setGlassPane(login);
-                        login.setVisible(true);
-                        login.requestFocus();
-                    }
-                }, detector);
-                listener.setTimeout(8_000);
-
-
-                login.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        if(login.isSuccessful()) {
-                            login.setVisible(false);
-                            listener.start();
-                        }
-                    }
-                });
-
-                listener.start();
-
+        SwingUtilities.invokeLater(() -> {
+            final JFrame frame = new JFrame("Navigable Image Panel");
+            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            NavigableImagePanel panel = new NavigableImagePanel();
+            try {
+                final BufferedImage image = ImageIO.read( Main.class.getClassLoader().getResourceAsStream(filename) );
+                panel.setImage(image);
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(null, e.getMessage(), "",
+                        JOptionPane.ERROR_MESSAGE);
+                System.exit(1);
             }
+
+            frame.getContentPane().add(panel, BorderLayout.CENTER);
+
+            GraphicsEnvironment ge =
+                    GraphicsEnvironment.getLocalGraphicsEnvironment();
+            Rectangle bounds = ge.getMaximumWindowBounds();
+            frame.setSize(new Dimension(bounds.width, bounds.height));
+            frame.setVisible(true);
+
+            final Login login = new Login();
+
+            final InactivityListener listener = new InactivityListener(() -> {
+                frame.setGlassPane(login);
+                login.setVisible(true);
+                login.requestFocus();
+            }, detector);
+            listener.setTimeout(8_000);
+
+
+            login.setAction(new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if(login.isSuccessful()) {
+                        login.setVisible(false);
+                        listener.start();
+                    }
+                }
+            });
+
+            listener.start();
+
         });
     }
 

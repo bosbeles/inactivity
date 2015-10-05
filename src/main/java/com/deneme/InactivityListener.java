@@ -6,13 +6,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by a on 4.10.2015.
+ * Inactivity Listener
  */
 public class InactivityListener {
 
     private final Runnable action;
     private volatile int timeout = 15_000; // ms
-    private int checkInterval = 2_000; // ms
     private ScheduledExecutorService service;
     private ScheduledFuture<?> lastTimer;
     private IdleTimeDetector idleTimeDetector;
@@ -20,6 +19,7 @@ public class InactivityListener {
     public InactivityListener(Runnable action, IdleTimeDetector idleTimeDetector) {
         this.action = action;
         this.idleTimeDetector = idleTimeDetector;
+        service = Executors.newSingleThreadScheduledExecutor();
     }
 
     public int getTimeout() {
@@ -42,15 +42,18 @@ public class InactivityListener {
     }
 
     private void startTimerTask() {
-        service = Executors.newSingleThreadScheduledExecutor();
-        lastTimer = service.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                if (idleTimeDetector.getIdleTime() > timeout) {
-                    action.run();
-                    stop();
-                }
-            }
-        }, 0, checkInterval, TimeUnit.MILLISECONDS);
+        scheduleAction(getTimeout());
+    }
 
+    private void scheduleAction(long diff) {
+        lastTimer = service.schedule(() -> {
+            long diff1 = getTimeout() - idleTimeDetector.getIdleTime();
+            if (diff1 <= 0) {
+                action.run();
+            }
+            else {
+                scheduleAction(diff1);
+            }
+        }, diff, TimeUnit.MILLISECONDS);
     }
 }
